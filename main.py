@@ -6,6 +6,7 @@ db_vendas = GerenciadorArquivo("vendas.csv")
 
 
 class Jogo:
+    # Construtor para criar um novo jogo
     def __init__(self, codigo, nome, genero, preco, estoque):
         self.codigo = str(codigo)
         self.nome = str(nome)
@@ -13,6 +14,7 @@ class Jogo:
         self.preco = float(preco)
         self.estoque = int(estoque)
 
+    # Método para converter o objeto Jogo em um dicionário para que a classe gerenciador consiga salvar no CSV
     def to_dict(self):
         return {
             "codigo": self.codigo,
@@ -22,11 +24,12 @@ class Jogo:
             "estoque": self.estoque,
         }
 
+    # Exibir as informações do jogo. Vai ficar mostrando estoque/indicando que está esgotado
     def exibir(self):
         estoque_txt = f"{self.estoque} un." if self.estoque > 0 else "ESGOTADO"
         print(f"  [{self.codigo}] {self.nome:<28} {self.genero:<12} R$ {self.preco:>7.2f}   {estoque_txt}")
 
-
+# Classe para representar um item no carrinho, que tem um jogo e a quantidade desejada
 class ItemCarrinho:
     def __init__(self, jogo, quantidade=1):
         self.jogo = jogo
@@ -35,11 +38,13 @@ class ItemCarrinho:
     def subtotal(self):
         return self.jogo.preco * self.quantidade
 
-
+# Classe para representar o carrinho de compras do cliente, que pode adicionar/remover itens, calcular total, etc.
 class Carrinho:
+    # Construtor para criar um carrinho vazio
     def __init__(self):
         self.itens = []
 
+    # Método para adicionar um jogo ao carrinho. Se o jogo já estiver no carrinho, apenas muda a quantidade
     def adicionar(self, jogo, qtd=1):
         for item in self.itens:
             if item.jogo.codigo == jogo.codigo:
@@ -49,6 +54,8 @@ class Carrinho:
         self.itens.append(ItemCarrinho(jogo, qtd))
         print(f"  '{jogo.nome}' adicionado ao carrinho.")
 
+ 
+    # Método para remover um jogo do carrinho
     def remover(self, codigo):
         for i, item in enumerate(self.itens):
             if item.jogo.codigo == codigo:
@@ -57,12 +64,15 @@ class Carrinho:
                 return
         print("  Codigo nao encontrado no carrinho.")
 
+    # Método para calcular o total do carrinho somando o subtotal de cada item
     def total(self):
         return sum(item.subtotal() for item in self.itens)
 
+    # Método para limpar o carrinho, removendo todos os itens
     def limpar(self):
         self.itens.clear()
 
+    # Método para exibir o conteúdo do carrinho, mostrando cada item.
     def exibir(self):
         if not self.itens:
             print("  Carrinho vazio.")
@@ -74,16 +84,19 @@ class Carrinho:
         print(f"  │  {'TOTAL':>36}  R$ {self.total():.2f}")
         print("  └" + "─" * 47)
 
-
+# Classe para representar um cliente, que tem um nome e um carrinho de compras
 class Cliente:
+    # Construtor para criar um cliente com um nome e um carrinho vazio
     def __init__(self, nome):
         self.nome = nome.strip().title()
         self.carrinho = Carrinho()
 
+    # Método para exibir o status do cliente, mostrando o nome, quantidade de itens...
     def status(self):
         print(f"\n  {self.nome}  |  Itens: {len(self.carrinho.itens)}  |  Total: R$ {self.carrinho.total():.2f}")
 
-
+# Função para carregar os jogos do arquivo CSV usando o gerenciador de arquivos. 
+# Converte cada linha em um objeto Jogo.
 def carregar_jogos():
     registros = db_jogos.ler_dados()
     jogos = []
@@ -94,11 +107,11 @@ def carregar_jogos():
             print(f"  Linha ignorada no CSV: {e}")
     return jogos
 
-
+# Função para salvar os jogos no arquivo CSV usando o gerenciador de arquivos.
 def salvar_jogos(jogos):
     db_jogos.salvar_dados([j.to_dict() for j in jogos])
 
-
+# Função para registrar uma venda no arquivo CSV de vendas. 
 def registrar_venda(cliente, jogos_comprados, total):
     historico = db_vendas.ler_dados()
     for j in jogos_comprados:
@@ -111,19 +124,19 @@ def registrar_venda(cliente, jogos_comprados, total):
         })
     db_vendas.salvar_dados(historico)
 
-
+# Função para buscar jogos por nome, filtrando a lista de jogos e retornando os que contêm o termo pesquisado.
 def buscar_por_nome(jogos, termo):
     termo = termo.lower()
     return [j for j in jogos if termo in j.nome.lower()]
 
-
+# Função para buscar um jogo por código, percorrendo a lista de jogos e retornando o que tiver o código correspondente.
 def jogo_por_codigo(jogos, codigo):
     for j in jogos:
         if j.codigo == codigo:
             return j
     return None
 
-
+# Função para gerar um relatório com informações sobre os jogos cadastrados.
 def relatorio(jogos):
     print("\n  ┌─ RELATORIO " + "─" * 42)
     print(f"  │  Total de jogos    : {len(jogos)}")
@@ -147,6 +160,7 @@ def relatorio(jogos):
     print("  └" + "─" * 53)
 
 
+# Função para aplicar um cupom de desconto, verificando se o cupom é válido e calculando o desconto no total.
 def aplicar_cupom(total):
     cupom = input("  Cupom de desconto (Enter p/ pular): ").strip().upper()
     cupons_validos = {"IFPE10": 10, "GAMER20": 20, "LAIRSON15": 15}
@@ -161,7 +175,7 @@ def aplicar_cupom(total):
         print("  Cupom invalido.")
         return total, 0
 
-
+# Função para cadastrar um novo jogo, solicitando as informações do jogo e validando os dados de entrada.
 def cadastrar_jogo(jogos):
     print("\n  ── Cadastrar Novo Jogo ──────────────────")
     nome = input("  Nome    : ").strip().title()
@@ -188,7 +202,7 @@ def cadastrar_jogo(jogos):
     salvar_jogos(jogos)
     print(f"  '{nome}' cadastrado com codigo {codigo}.")
 
-
+# Função para remover um jogo, mostrando a lista de jogos e solicitando o código do jogo a ser removido.
 def remover_jogo(jogos):
     for j in jogos:
         j.exibir()
@@ -201,7 +215,7 @@ def remover_jogo(jogos):
     else:
         print("  Codigo nao encontrado.")
 
-
+# Lista de jogos de demonstração para carregar no início, caso o arquivo CSV esteja vazio.
 JOGOS_DEMO = [
     Jogo("JG1001", "The Last of Us Part I", "Aventura", 199.90, 10),
     Jogo("JG1002", "FIFA 25", "Esporte", 159.90, 15),
@@ -213,14 +227,14 @@ JOGOS_DEMO = [
     Jogo("JG1008", "Red Dead Redemption 2", "Aventura", 149.90, 6),
 ]
 
-
+# Função para exibir o cabeçalho do sistema, mostrando o nome do e-commerce e a instituição.
 def cabecalho():
     print("\n" + "═" * 55)
     print("           E-COMMERCE DE JOGOS  ")
     print("        IFPE Afogados da Ingazeira")
     print("═" * 55)
 
-
+# Função para exibir o menu principal, mostrando as opções disponíveis para o cliente.
 def menu_principal():
     print("\n  ┌─ MENU " + "─" * 40)
     print("  │  1. Ver Catalogo")
@@ -233,7 +247,7 @@ def menu_principal():
     print("  └" + "─" * 47)
     return input("  Opcao: ").strip()
 
-
+# Função para exibir o catálogo de jogos, permitindo que o cliente adicione jogos ao carrinho.
 def tela_catalogo(jogos, cliente):
     print("\n  ── CATALOGO " + "─" * 43)
     if not jogos:
@@ -264,7 +278,7 @@ def tela_catalogo(jogos, cliente):
             print(f"  {e}")
     cliente.carrinho.adicionar(jogo, qtd)
 
-
+# Função para exibir a tela de busca, permitindo que o cliente pesquise jogos por nome e adicione ao carrinho.
 def tela_busca(jogos, cliente):
     print("\n  ── BUSCAR ─────────────────────────────────")
     termo = input("  Pesquisar por nome: ").strip()
@@ -295,7 +309,7 @@ def tela_busca(jogos, cliente):
             print(f"  {e}")
     cliente.carrinho.adicionar(jogo, qtd)
 
-
+# Função para exibir o carrinho do cliente, mostrando os itens adicionados e permitindo que o cliente remova itens do carrinho.
 def tela_carrinho(cliente):
     print("\n  ── CARRINHO ───────────────────────────────")
     cliente.carrinho.exibir()
@@ -305,7 +319,7 @@ def tela_carrinho(cliente):
     if cod:
         cliente.carrinho.remover(cod)
 
-
+# Função para finalizar a compra, mostrando o resumo do pedido, aplicando cupom de desconto e registrando a venda.
 def tela_finalizar(cliente, jogos):
     print("\n  ── FINALIZAR COMPRA ───────────────────────")
     cliente.carrinho.exibir()
@@ -330,7 +344,7 @@ def tela_finalizar(cliente, jogos):
     print(f"  Total pago: R$ {total_final:.2f}")
     cliente.carrinho.limpar()
 
-
+# Função para exibir a tela de administração, permitindo que o administrador cadastre ou remova jogos do catálogo.
 def tela_admin(jogos):
     print("\n  ── ADMINISTRACAO ──────────────────────────")
     print("  1. Cadastrar novo jogo")
@@ -342,7 +356,7 @@ def tela_admin(jogos):
     elif op == "2":
         remover_jogo(jogos)
 
-
+# Função principal do programa, que exibe o cabeçalho, carrega os jogos, solicita o nome do cliente e exibe o menu principal.
 def main():
     cabecalho()
     jogos = carregar_jogos()
